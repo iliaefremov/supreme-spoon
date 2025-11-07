@@ -24,24 +24,25 @@ const getSubjectIcon = (subject: string): string => {
 // --- Вспомогательные функции (вынесены для чистоты кода) ---
 
 const DAYS_OF_WEEK = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница'];
-const SEMESTER_START_DATE = new Date('2024-09-02'); // Исправлено: Понедельник, 2 сентября 2024
+const SEMESTER_START_DATE = new Date('2025-09-01'); // Понедельник, 1 сентября 2025
 
 /**
- * Определяет номер ТЕКУЩЕЙ учебной недели (1 или 2).
+ * Определяет номер учебной недели (1 или 2) для недели, к которой относится данная дата.
+ * Расчет ведется от понедельника этой недели.
  */
-const getCurrentAcademicWeek = (currentDate: Date): 1 | 2 => {
+const getAcademicWeekForDate = (date: Date): 1 | 2 => {
+    const mondayOfGivenWeek = getMonday(date);
     const start = new Date(SEMESTER_START_DATE);
     start.setHours(0, 0, 0, 0);
+    mondayOfGivenWeek.setHours(0, 0, 0, 0);
 
-    const now = new Date(currentDate);
-    now.setHours(0, 0, 0, 0);
+    if (mondayOfGivenWeek < start) return 1;
 
-    if (now < start) return 1;
-
-    const diff = now.getTime() - start.getTime();
-    const weeksPassed = Math.floor(diff / (1000 * 60 * 60 * 24 * 7));
-    const academicWeek = (weeksPassed % 2 === 0) ? 1 : 2;
-
+    const diffTime = mondayOfGivenWeek.getTime() - start.getTime();
+    const weeksPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+    
+    // Если weeksPassed четное, это Неделя 2. Если нечетное, это Неделя 1.
+    const academicWeek = (weeksPassed % 2 === 0) ? 2 : 1;
     return academicWeek as 1 | 2;
 };
 
@@ -50,15 +51,17 @@ const getCurrentAcademicWeek = (currentDate: Date): 1 | 2 => {
  * Начиная с субботы, показывает следующую неделю.
  */
 const getInitialDisplayedWeek = (currentDate: Date): 1 | 2 => {
-    const currentAcademicWeek = getCurrentAcademicWeek(currentDate);
     const dayOfWeek = currentDate.getDay(); // Sunday - 0, Saturday - 6
 
-    // Если сегодня суббота или воскресенье, показываем следующую неделю
-    if (dayOfWeek === 6 || dayOfWeek === 0) {
-        return currentAcademicWeek === 1 ? 2 : 1;
+    if (dayOfWeek === 6 || dayOfWeek === 0) { // Если сегодня суббота или воскресенье
+        // Определяем академическую неделю для следующего понедельника.
+        const nextMonday = new Date(currentDate);
+        nextMonday.setDate(currentDate.getDate() + (dayOfWeek === 6 ? 2 : 1)); // Если суббота, добавляем 2 дня, чтобы получить понедельник. Если воскресенье, добавляем 1 день.
+        return getAcademicWeekForDate(nextMonday);
+    } else { // С понедельника по пятницу
+        // Отображаем академическую неделю для текущей недели.
+        return getAcademicWeekForDate(currentDate);
     }
-    // В остальные дни показываем текущую
-    return currentAcademicWeek;
 };
 
 
@@ -253,7 +256,7 @@ const Schedule: React.FC<ScheduleProps> = ({ user, homeworks, isLoadingHomework 
         return () => clearInterval(timerId);
     }, []);
 
-    const currentAcademicWeek = useMemo(() => getCurrentAcademicWeek(now), [now]);
+    const currentAcademicWeek = useMemo(() => getAcademicWeekForDate(now), [now]);
     const [activeWeek, setActiveWeek] = useState<1 | 2>(() => getInitialDisplayedWeek(now));
     const dayRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
