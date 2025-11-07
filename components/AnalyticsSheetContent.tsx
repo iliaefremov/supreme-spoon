@@ -82,7 +82,7 @@ const AnalyticsSheetContent: React.FC<AnalyticsSheetContentProps> = ({ subject, 
 
             {stats.topicsToImprove.length > 0 && (
                 <div>
-                    <h4 className="font-bold text-text-primary dark:text-dark-text-primary mb-3">Темы которые можно</h4>
+                    <h4 className="font-bold text-text-primary dark:text-dark-text-primary mb-3">Темы которые можно улучшить</h4>
                     <ul className="space-y-2">
                         {stats.topicsToImprove.map((grade, index) => (
                             <li key={index} className="flex justify-between items-center bg-secondary dark:bg-dark-secondary px-3 py-2 rounded-xl border border-border-color dark:border-dark-border-color">
